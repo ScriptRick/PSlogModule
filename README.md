@@ -1,4 +1,4 @@
 # PSlogModule
 A module for working with logs in Powershell scripts
 
-Testing VSCode integration
+Nothing to see here
