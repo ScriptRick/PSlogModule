@@ -97,7 +97,32 @@ Function Initialize-Log {
 
         [Parameter(Mandatory=$False,
                    ParameterSetName="SmsText")]
-        [switch]$SmsSend
+        [switch]$SmsSend,
+
+        [Parameter(Mandatory=$True,
+                   ParameterSetName="EvLog")]
+        [string]$EventLogName='Windows PowerShell',
+
+        [Parameter(Mandatory=$True,
+                   ParameterSetName="EvLog")]
+        [string]$EventLogSource='Powershell',
+
+        [Parameter(Mandatory=$True,
+                   ParameterSetName="EvLog")]
+        [ValidateSet('Information','Warning','Error')]
+        [string]$EventType='Information',
+
+        [Parameter(Mandatory=$True,
+                   ParameterSetName="EvLog")]
+        [int]$EventLogID,
+
+        [Parameter(Mandatory=$False,
+                   ParameterSetName="EvLog")]
+        [string]$ComputerName=$env:COMPUTERNAME,
+
+        [Parameter(Mandatory=$False,
+                   ParameterSetName="EvLog")]
+        [string]$EventMessage
     )
 
     Begin {}
@@ -174,6 +199,34 @@ Function Initialize-Log {
                     # Some validation here
                     # SendMail private function here
                     # I'm thinking I may just remove this and force use of the Send-Log function
+                }
+            }
+            "EvLog" {
+                Write-Verbose "Initialize EventlogEntry Object"
+		        Write-Verbose "Tetst if EventLog  $EventLogName on $ComputerName exists"
+                $EventLogExists = [System.Diagnostics.EventLog]::Exists($EventLogName, $ComputerName)
+                Write-Verbose "Tetst if source $EventLogSource on $ComputerName exists"
+                $EventLogSourceExists = [System.Diagnostics.EventLog]::SourceExists($EventLogSource, $ComputerName)
+                Write-Verbose "Log Exists is $EventLogExists"
+                Write-Verbose "Source Exists is $EventLogSourceExists"
+                If (!($EventLogExists)) {
+                    Write-Verbose "Creating $EventLogName Log"
+                    [System.Diagnostics.EventLog]::new($EventLogName)
+                }
+                If (!($EventLogSourceExists)) {
+                    Write-Verbose "Creating $EventLogSource Source"
+                    [System.Diagnostics.EventLog]::CreateEventSource($EventLogSource,$EventLogName,$ComputerName)
+                }
+                Write-Verbose 'Create a hashtable with the output info'
+                $info = @{
+                    'ID'=[guid]::NewGuid();
+                    'Type'='EvLog';
+                    'EventLogName'=$EventLogName;
+                    'EnentLogSource'=$EventLogSource;
+                    'EventType'='';
+                    'EventLogID'='';
+                    'ComputerName'=$ComputerName;
+                    'EventMessage'=''
                 }
             }
         }
